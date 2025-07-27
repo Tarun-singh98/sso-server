@@ -1,0 +1,24 @@
+backend/
+│
+├── controllers/
+│   └── authController.js
+│
+├── middleware/
+│   └── authMiddleware.js
+│
+├── models/
+│   └── userModel.js
+│
+├── routes/
+│   └── authRoutes.js
+│
+├── services/
+│   └── authService.js
+│
+├── utils/
+│   └── tokenUtils.js
+│
+├── config/
+│   └── db.js
+│
+└── server.js
