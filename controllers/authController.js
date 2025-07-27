@@ -50,16 +50,47 @@ exports.verify = async (req, res) => {
     const token = authHeader && authHeader.split(" ")[1];
 
     if (!token) {
-      return res.status(401).json({ error: "No token provided" });
+      return res.status(401).json({
+        error: "No token provided",
+        code: "NO_TOKEN",
+      });
     }
 
     const jwt = require("jsonwebtoken");
-    const decoded = jwt.verify(token, process.env.ACCESS_SECRET);
+    let decoded;
+
+    try {
+      decoded = jwt.verify(token, process.env.ACCESS_SECRET);
+    } catch (jwtError) {
+      console.error("JWT verification failed:", jwtError.message);
+
+      if (jwtError.name === "TokenExpiredError") {
+        return res.status(401).json({
+          error: "Token expired",
+          code: "TOKEN_EXPIRED",
+          expiredAt: jwtError.expiredAt,
+        });
+      } else if (jwtError.name === "JsonWebTokenError") {
+        return res.status(401).json({
+          error: "Invalid token",
+          code: "INVALID_TOKEN",
+        });
+      } else {
+        return res.status(401).json({
+          error: "Token verification failed",
+          code: "VERIFICATION_FAILED",
+        });
+      }
+    }
 
     const User = require("../models/userModel");
     const user = await User.findById(decoded.id);
+
     if (!user) {
-      return res.status(401).json({ error: "User not found" });
+      return res.status(401).json({
+        error: "User not found",
+        code: "USER_NOT_FOUND",
+      });
     }
 
     res.status(200).json({
@@ -72,10 +103,12 @@ exports.verify = async (req, res) => {
     });
   } catch (error) {
     console.error("Token verification error:", error);
-    res.status(401).json({ error: "Invalid or expired token" });
+    res.status(500).json({
+      error: "Internal server error",
+      code: "INTERNAL_ERROR",
+    });
   }
 };
-
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
   try {
